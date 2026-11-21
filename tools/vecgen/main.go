@@ -553,7 +553,7 @@ func genBoleto(w *writer) {
 		}
 		rows = append(rows, []string{strconv.Itoa(int(seg)), strconv.Itoa(vt), strconv.FormatInt(value, 10) + "L", lit(rest), lit(out)})
 	}
-	w.table("ArrecadacaoBuilds", "(int Segment, int ValueType, long Value, string Rest, string Expected)", rows)
+	w.table("ArrecadacaoBuilds", "(int Segment, int ValueType, long Value, string Tail, string Expected)", rows)
 
 	inputs := []string{"", "123", strings.Repeat("1", 49), strings.Repeat("1", 46), "00190.00009 00000.000000 00000.000075 9 10000000010000",
 		"00190.00009 00000.500000 00000.000075 9 10000000010000", "00199100000000100000000000000000000000000007",

@@ -263,14 +263,14 @@ public class ParityTests
             string actual;
             try
             {
-                actual = DescribeBoleto(BoletoCode.CreateArrecadacao((ArrecadacaoSegment)v.Segment, v.ValueType, v.Value, v.Rest));
+                actual = DescribeBoleto(BoletoCode.CreateArrecadacao((ArrecadacaoSegment)v.Segment, v.ValueType, v.Value, v.Tail));
             }
             catch (BoletoException e)
             {
                 actual = "err|" + e.Message;
             }
 
-            Check(failures, v.Segment + " " + v.ValueType + " " + v.Value + " " + v.Rest, v.Expected, actual);
+            Check(failures, v.Segment + " " + v.ValueType + " " + v.Value + " " + v.Tail, v.Expected, actual);
         }
 
         Assert.Empty(failures);
