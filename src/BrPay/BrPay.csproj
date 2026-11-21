@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>BrPay</RootNamespace>
+    <AssemblyName>BrPay</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <PackageId>BrPay</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Victor Condack</Authors>
+    <Description>Zero-dependency toolkit for Brazilian payments: Pix BR Code decode, build and lint (EMV MPM, CRC-16), Pix keys and EndToEndIds, boleto barcodes and linhas digitáveis (bancário and arrecadação, 2025 due-date factor reset, typo recovery), and CPF/CNPJ validation including the alphanumeric CNPJ. Parity-tested against the Go implementation.</Description>
+    <PackageTags>pix;boleto;brcode;emv;cpf;cnpj;brazil;payments</PackageTags>
+    <RepositoryUrl>https://github.com/victorcondackdev/brpay-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/victorcondackdev/brpay-dotnet</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) 2026 Victor Condack</Copyright>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BrPay.Tests" />
+  </ItemGroup>
+
+</Project>

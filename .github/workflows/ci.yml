@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build, test and pack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: SDK info
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore BrPay.sln
+
+      - name: Build (warnings are errors)
+        run: dotnet build BrPay.sln -c Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test tests/BrPay.Tests/BrPay.Tests.csproj -c Release --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          --logger "trx;LogFileName=results.trx"
+          --logger "console;verbosity=normal"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+      - name: Pack
+        run: dotnet pack src/BrPay/BrPay.csproj -c Release --no-build -o artifacts
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: artifacts/*nupkg
+          if-no-files-found: error
+
+      - name: Check formatting
+        continue-on-error: true
+        run: dotnet format BrPay.sln --verify-no-changes --no-restore --verbosity diagnostic
+
+  trimming:
+    name: Trimming smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # IsAotCompatible enables the trim, AOT and single-file analyzers during the
+      # normal build; publishing a trimmed console app that references the library
+      # additionally proves there are no ILLink warnings at the consumer side.
+      - name: Publish trimmed consumer
+        run: |
+          mkdir -p /tmp/aotcheck && cd /tmp/aotcheck
+          dotnet new console --force -o . -n AotCheck
+          dotnet add reference "$GITHUB_WORKSPACE/src/BrPay/BrPay.csproj"
+          cat > Program.cs <<'CS'
+          var r = BrPay.Decoder.Decode(args.Length > 0 ? args[0] : "12.ABC.345/01DE-35");
+          System.Console.WriteLine(r.Kind + " " + (r.ErrorMessage ?? "ok"));
+          CS
+          dotnet publish -c Release -r linux-x64 --self-contained -p:PublishTrimmed=true -p:TreatWarningsAsErrors=true -o out
+          ./out/AotCheck
+
+  parity:
+    name: Regenerate Go parity vectors
+    runs-on: ubuntu-latest
+    # Requires the Go implementation to be reachable; informative until it is public.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: brpay-dotnet
+
+      - uses: actions/checkout@v4
+        with:
+          repository: victorcondackdev/brpay
+          path: brpay
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: brpay/go.mod
+
+      - name: Vectors are up to date
+        working-directory: brpay-dotnet
+        run: |
+          go -C tools/vecgen run . > tests/BrPay.Tests/Parity/GoVectors.g.cs
+          git diff --exit-code -- tests/BrPay.Tests/Parity/GoVectors.g.cs
